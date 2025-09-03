@@ -36,22 +36,37 @@ export const sampleEnterprise: Enterprise = {
       id: 'bc7cb265-7b9f-4fb2-86d1-31f3599974a2',
       code: 'AMER',
       name: 'Americas Region',
+      x: 50,
+      y: 50,
+      width: 350,
+      height: 500,
       plants: [
         {
           id: '9fac8a3e-36ba-4631-94c6-c192a83f47a6',
           name: 'Greenwood',
           regionId: 'bc7cb265-7b9f-4fb2-86d1-31f3599974a2',
-          coordinates: { x: 100, y: 100 },
+          x: 20,
+          y: 50,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: '6225c2a6-6b1d-4c5d-9d1c-4b9d1c4b9d1c',
               name: 'Melting',
               plantId: '9fac8a3e-36ba-4631-94c6-c192a83f47a6',
+              x: 10,
+              y: 40,
+              width: 90,
+              height: 50,
               locations: [
                 {
                   id: 'loc-green-1-1-1',
                   name: 'UpperFloor',
                   areaId: '6225c2a6-6b1d-4c5d-9d1c-4b9d1c4b9d1c',
+                  x: 10,
+                  y: 10,
+                  width: 70,
+                  height: 30,
                   equipment: [
                     createEquipment('Meltvessel', 'Melt', 'Melt', [
                       createAttribute('Model', 'string', 'RB-2000X'),
@@ -73,6 +88,10 @@ export const sampleEnterprise: Enterprise = {
                   id: 'loc-us-1-1-2',
                   name: 'Station 2',
                   areaId: '6225c2a6-6b1d-4c5d-9d1c-4b9d1c4b9d1c',
+                  x: 110,
+                  y: 10,
+                  width: 70,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-003', 'Welding Robot W1', 'Robot', [
                       createAttribute('Model', 'string', 'WLD-500'),
@@ -87,11 +106,19 @@ export const sampleEnterprise: Enterprise = {
               id: 'area-us-1-2',
               name: 'Quality Control',
               plantId: '9fac8a3e-36ba-4631-94c6-c192a83f47a6',
+              x: 110,
+              y: 40,
+              width: 90,
+              height: 50,
               locations: [
                 {
                   id: 'loc-us-1-2-1',
                   name: 'Inspection Bay',
                   areaId: 'area-us-1-2',
+                  x: 10,
+                  y: 10,
+                  width: 70,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-004', '3D Scanner', 'Scanner', [
                       createAttribute('Resolution', 'string', '0.01mm'),
@@ -108,17 +135,28 @@ export const sampleEnterprise: Enterprise = {
           id: 'plant-mx-1',
           name: 'Mexico City Factory',
           regionId: 'bc7cb265-7b9f-4fb2-86d1-31f3599974a2',
-          coordinates: { x: 150, y: 200 },
+          x: 20,
+          y: 170,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: 'area-mx-1-1',
               name: 'Production Floor',
               plantId: 'plant-mx-1',
+              x: 10,
+              y: 40,
+              width: 290,
+              height: 50,
               locations: [
                 {
                   id: 'loc-mx-1-1-1',
                   name: 'Main Assembly',
                   areaId: 'area-mx-1-1',
+                  x: 10,
+                  y: 10,
+                  width: 270,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-005', 'CNC Machine', 'Machine', [
                       createAttribute('Model', 'string', 'CNC-8000'),
@@ -136,22 +174,37 @@ export const sampleEnterprise: Enterprise = {
       id: 'reg-emea',
       code: 'EMEA',
       name: 'Europe, Middle East & Africa',
+      x: 450,
+      y: 50,
+      width: 350,
+      height: 500,
       plants: [
         {
           id: 'plant-de-1',
           name: 'Berlin Tech Center',
           regionId: 'reg-emea',
-          coordinates: { x: 300, y: 100 },
+          x: 20,
+          y: 50,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: 'area-de-1-1',
               name: 'Electronics Assembly',
               plantId: 'plant-de-1',
+              x: 10,
+              y: 40,
+              width: 140,
+              height: 50,
               locations: [
                 {
                   id: 'loc-de-1-1-1',
                   name: 'SMT Line 1',
                   areaId: 'area-de-1-1',
+                  x: 10,
+                  y: 10,
+                  width: 120,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-006', 'Pick and Place Machine', 'Machine', [
                       createAttribute('Components/Hour', 'number', 25000),
@@ -169,11 +222,19 @@ export const sampleEnterprise: Enterprise = {
               id: 'area-de-1-2',
               name: 'Testing Lab',
               plantId: 'plant-de-1',
+              x: 160,
+              y: 40,
+              width: 140,
+              height: 50,
               locations: [
                 {
                   id: 'loc-de-1-2-1',
                   name: 'Environmental Testing',
                   areaId: 'area-de-1-2',
+                  x: 10,
+                  y: 10,
+                  width: 120,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-008', 'Climate Chamber', 'TestEquipment', [
                       createAttribute('Temp Range', 'string', '-40°C to 180°C'),
@@ -189,17 +250,28 @@ export const sampleEnterprise: Enterprise = {
           id: 'plant-uk-1',
           name: 'London Distribution',
           regionId: 'reg-emea',
-          coordinates: { x: 280, y: 150 },
+          x: 20,
+          y: 170,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: 'area-uk-1-1',
               name: 'Warehouse A',
               plantId: 'plant-uk-1',
+              x: 10,
+              y: 40,
+              width: 290,
+              height: 50,
               locations: [
                 {
                   id: 'loc-uk-1-1-1',
                   name: 'Receiving Dock',
                   areaId: 'area-uk-1-1',
+                  x: 10,
+                  y: 10,
+                  width: 270,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-009', 'Automated Sorter', 'Sorter', [
                       createAttribute('Throughput', 'number', 5000),
@@ -217,22 +289,37 @@ export const sampleEnterprise: Enterprise = {
       id: 'reg-apac',
       code: 'APAC',
       name: 'Asia Pacific',
+      x: 850,
+      y: 50,
+      width: 350,
+      height: 500,
       plants: [
         {
           id: 'plant-jp-1',
           name: 'Tokyo Innovation Hub',
           regionId: 'reg-apac',
-          coordinates: { x: 500, y: 100 },
+          x: 20,
+          y: 50,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: 'area-jp-1-1',
               name: 'R&D Laboratory',
               plantId: 'plant-jp-1',
+              x: 10,
+              y: 40,
+              width: 140,
+              height: 50,
               locations: [
                 {
                   id: 'loc-jp-1-1-1',
                   name: 'Prototype Workshop',
                   areaId: 'area-jp-1-1',
+                  x: 10,
+                  y: 10,
+                  width: 120,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-010', '3D Printer Industrial', 'Printer', [
                       createAttribute('Build Volume', 'string', '500x500x500mm'),
@@ -251,11 +338,19 @@ export const sampleEnterprise: Enterprise = {
               id: 'area-jp-1-2',
               name: 'Clean Room',
               plantId: 'plant-jp-1',
+              x: 160,
+              y: 40,
+              width: 140,
+              height: 50,
               locations: [
                 {
                   id: 'loc-jp-1-2-1',
                   name: 'Semiconductor Lab',
                   areaId: 'area-jp-1-2',
+                  x: 10,
+                  y: 10,
+                  width: 120,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-012', 'Wafer Inspector', 'Inspector', [
                       createAttribute('Magnification', 'string', '50x-1000x'),
@@ -271,17 +366,28 @@ export const sampleEnterprise: Enterprise = {
           id: 'plant-cn-1',
           name: 'Shanghai Production',
           regionId: 'reg-apac',
-          coordinates: { x: 480, y: 180 },
+          x: 20,
+          y: 170,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: 'area-cn-1-1',
               name: 'Mass Production',
               plantId: 'plant-cn-1',
+              x: 10,
+              y: 40,
+              width: 290,
+              height: 50,
               locations: [
                 {
                   id: 'loc-cn-1-1-1',
                   name: 'Line 1',
                   areaId: 'area-cn-1-1',
+                  x: 10,
+                  y: 10,
+                  width: 130,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-013', 'Injection Molding Machine', 'Machine', [
                       createAttribute('Clamping Force', 'number', 2000),
@@ -293,6 +399,10 @@ export const sampleEnterprise: Enterprise = {
                   id: 'loc-cn-1-1-2',
                   name: 'Line 2',
                   areaId: 'area-cn-1-1',
+                  x: 150,
+                  y: 10,
+                  width: 130,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-014', 'Assembly Robot Array', 'Robot', [
                       createAttribute('Units', 'number', 8),
@@ -308,17 +418,28 @@ export const sampleEnterprise: Enterprise = {
           id: 'plant-au-1',
           name: 'Sydney Operations',
           regionId: 'reg-apac',
-          coordinates: { x: 550, y: 250 },
+          x: 20,
+          y: 290,
+          width: 310,
+          height: 100,
           areas: [
             {
               id: 'area-au-1-1',
               name: 'Packaging Center',
               plantId: 'plant-au-1',
+              x: 10,
+              y: 40,
+              width: 290,
+              height: 50,
               locations: [
                 {
                   id: 'loc-au-1-1-1',
                   name: 'Packaging Line',
                   areaId: 'area-au-1-1',
+                  x: 10,
+                  y: 10,
+                  width: 270,
+                  height: 30,
                   equipment: [
                     createEquipment('eq-015', 'Box Sealer', 'Packaging', [
                       createAttribute('Speed', 'number', 30),

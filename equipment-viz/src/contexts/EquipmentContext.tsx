@@ -21,6 +21,7 @@ interface EquipmentContextType {
   removeArea: (areaId: string) => void;
   removeLocation: (locationId: string) => void;
   removeEquipment: (equipmentId: string) => void;
+  updateItem: (itemId: string, updates: Partial<Region | Plant | Area | Location | Equipment>) => void;
 }
 
 const EquipmentContext = createContext<EquipmentContextType | undefined>(undefined);
@@ -238,6 +239,44 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
     }
   };
 
+  const updateItem = (itemId: string, updates: Partial<Region | Plant | Area | Location | Equipment>) => {
+    if (!enterprise) return;
+
+    const recursiveUpdate = (items: any[]): any[] => {
+      return items.map(item => {
+        if (item.id === itemId) {
+          return { ...item, ...updates };
+        }
+        if (item.regions) {
+          return { ...item, regions: recursiveUpdate(item.regions) };
+        }
+        if (item.plants) {
+          return { ...item, plants: recursiveUpdate(item.plants) };
+        }
+        if (item.areas) {
+          return { ...item, areas: recursiveUpdate(item.areas) };
+        }
+        if (item.locations) {
+          return { ...item, locations: recursiveUpdate(item.locations) };
+        }
+        if (item.equipment) {
+          return { ...item, equipment: recursiveUpdate(item.equipment) };
+        }
+        if (item.childEquipment) {
+          return { ...item, childEquipment: recursiveUpdate(item.childEquipment) };
+        }
+        return item;
+      });
+    };
+
+    const updatedEnterprise = {
+      ...enterprise,
+      regions: recursiveUpdate(enterprise.regions),
+    };
+
+    setEnterpriseState(updatedEnterprise);
+  };
+
   return (
     <EquipmentContext.Provider
       value={{
@@ -257,6 +296,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         removeArea,
         removeLocation,
         removeEquipment,
+        updateItem,
       }}
     >
       {children}

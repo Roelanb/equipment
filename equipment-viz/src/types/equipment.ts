@@ -29,6 +29,10 @@ export interface Equipment {
   attributes: Attribute[];
   childEquipment?: Equipment[];
   parentId?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface Location {
@@ -36,6 +40,10 @@ export interface Location {
   name: string;
   equipment: Equipment[];
   areaId: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface Area {
@@ -43,6 +51,10 @@ export interface Area {
   name: string;
   locations: Location[];
   plantId: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface Plant {
@@ -50,10 +62,10 @@ export interface Plant {
   name: string;
   areas: Area[];
   regionId: string;
-  coordinates?: {
-    x: number;
-    y: number;
-  };
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export type RegionCode = 'AMER' | 'EMEA' | 'APAC';
@@ -63,6 +75,10 @@ export interface Region {
   code: RegionCode;
   name: string;
   plants: Plant[];
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface Enterprise {
