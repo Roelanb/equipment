@@ -358,7 +358,7 @@ export const CanvasContainer: React.FC = () => {
       dragging = true;
       originalPosition = container.position.clone();
       // Get the starting position of the drag from the global space
-      dragStart = appRef.current!.stage.toLocal(event.global);
+      dragStart = new PIXI.Point().copyFrom(appRef.current!.stage.toLocal(event.global));
 
       if (clickCount === 1) {
         clickTimeout = setTimeout(() => {
@@ -407,7 +407,7 @@ export const CanvasContainer: React.FC = () => {
           clickCount = 0;
         }
 
-        const currentPos = appRef.current!.stage.toLocal(event.global);
+        const currentPos = new PIXI.Point().copyFrom(appRef.current!.stage.toLocal(event.global));
         const newX = originalPosition.x + (currentPos.x - dragStart.x);
         const newY = originalPosition.y + (currentPos.y - dragStart.y);
         container.position.set(newX, newY);
@@ -490,7 +490,7 @@ export const CanvasContainer: React.FC = () => {
 
         handleGraphics.on('pointerdown', (event) => {
           resizeDragging = true;
-          resizeStart = appRef.current!.stage.toLocal(event.global);
+          resizeStart = new PIXI.Point().copyFrom(appRef.current!.stage.toLocal(event.global));
           event.stopPropagation();
         });
 
@@ -510,7 +510,7 @@ export const CanvasContainer: React.FC = () => {
 
         handleGraphics.on('pointermove', (event) => {
           if (resizeDragging && resizeStart) {
-            const currentPos = appRef.current!.stage.toLocal(event.global);
+            const currentPos = new PIXI.Point().copyFrom(appRef.current!.stage.toLocal(event.global));
             const dx = currentPos.x - resizeStart.x;
             const dy = currentPos.y - resizeStart.y;
 
