@@ -1,0 +1,1 @@
+When clicking on a region, zoom in and show the plants in the region. Add a back button to zoom out.

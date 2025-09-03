@@ -1,0 +1,1 @@
+Make it possible to add / remove equipment, areas, plants and regions.

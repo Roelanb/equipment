@@ -1,0 +1,1 @@
+When clicking on a plant, zoom in and show the areas in the plant. Add a back button to zoom out.
