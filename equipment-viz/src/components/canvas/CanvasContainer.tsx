@@ -18,6 +18,11 @@ export const CanvasContainer: React.FC = () => {
   const [viewMode, setViewMode] = useState<'overview' | 'region' | 'plant'>('overview');
   const [appReady, setAppReady] = useState(false);
 
+  // Interaction constants
+  const GRID_SIZE = 10;
+  const MIN_CARD_WIDTH = 120;
+  const MIN_CARD_HEIGHT = 60;
+
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
@@ -317,7 +322,26 @@ export const CanvasContainer: React.FC = () => {
     return areaNodes;
   };
 
-  const createNodeGraphics = (node: VisualizationNode, onNodeClick: (node: VisualizationNode) => void, onNodeDoubleClick: (node: VisualizationNode) => void, isChild: boolean = false): PIXI.Container => {
+  // Helper: update a node by id in a nested tree
+  const updateNodeTree = (list: VisualizationNode[], id: string, patch: Partial<VisualizationNode>): VisualizationNode[] => {
+    return list.map((n) => {
+      if (n.id === id) return { ...n, ...patch };
+      if (n.children && n.children.length > 0) {
+        return { ...n, children: updateNodeTree(n.children, id, patch) };
+      }
+      return n;
+    });
+  };
+
+  const createNodeGraphics = (
+    node: VisualizationNode,
+    onNodeClick: (node: VisualizationNode) => void,
+    onNodeDoubleClick: (node: VisualizationNode) => void,
+    isChild: boolean = false,
+    app?: PIXI.Application,
+    currentScale: number = 1,
+    commitNodeUpdate?: (id: string, patch: Partial<VisualizationNode>) => void,
+  ): PIXI.Container => {
     const container = new PIXI.Container();
     const graphics = new PIXI.Graphics();
     
@@ -342,8 +366,20 @@ export const CanvasContainer: React.FC = () => {
     // Handle single and double clicks
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
     let clickCount = 0;
+    let suppressClick = false; // set by handle interactions to ignore node clicks
     
-    graphics.on('pointerdown', () => {
+    graphics.on('pointerdown', (e: PIXI.FederatedPointerEvent) => {
+      // Ignore clicks coming from handles or other children
+      let fromHandle = false;
+      let t: any = e.target as any;
+      while (t) {
+        if ((t as any).__isHandle) { fromHandle = true; break; }
+        t = t.parent;
+      }
+      if (fromHandle || e.target !== graphics || suppressClick) {
+        suppressClick = false;
+        return;
+      }
       clickCount++;
       
       if (clickCount === 1) {
@@ -408,10 +444,162 @@ export const CanvasContainer: React.FC = () => {
     
     // Add child nodes as children of this container
     node.children?.forEach(child => {
-      const childContainer = createNodeGraphics(child, onNodeClick, onNodeDoubleClick, true);
+      const childContainer = createNodeGraphics(child, onNodeClick, onNodeDoubleClick, true, app, currentScale, commitNodeUpdate);
       container.addChild(childContainer);
     });
-    
+
+    // Move/Resize handles (require app and commit callback)
+    if (app && commitNodeUpdate) {
+      let currentW = node.width;
+      let currentH = node.height;
+      // Move handle (top-right)
+      const moveHandle = new PIXI.Graphics();
+      (moveHandle as any).__isHandle = true;
+      moveHandle.eventMode = 'static';
+      moveHandle.cursor = 'grab';
+      const drawMoveHandle = () => {
+        moveHandle.clear();
+        moveHandle.fill({ color: 0x1976d2, alpha: 1 });
+        moveHandle.roundRect(currentW - 18, 4, 14, 14, 3);
+        moveHandle.stroke({ width: 1, color: 0xffffff, alpha: 0.9 });
+      };
+      drawMoveHandle();
+
+      let dragging = false;
+      let startGlobal = { x: 0, y: 0 };
+      let startPos = { x: node.x, y: node.y };
+      const onMovePointerMove = (e: PIXI.FederatedPointerEvent) => {
+        if (!dragging) return;
+        const g = e.global;
+        const dx = (g.x - startGlobal.x) / (currentScale || 1);
+        const dy = (g.y - startGlobal.y) / (currentScale || 1);
+        const nx = Math.round((startPos.x + dx) / GRID_SIZE) * GRID_SIZE;
+        const ny = Math.round((startPos.y + dy) / GRID_SIZE) * GRID_SIZE;
+        container.position.set(nx, ny);
+      };
+      const onMovePointerUp = () => {
+        if (!dragging) return;
+        dragging = false;
+        moveHandle.cursor = 'grab';
+        app.stage.off('pointermove', onMovePointerMove);
+        app.stage.off('pointerup', onMovePointerUp);
+        app.stage.off('pointerupoutside', onMovePointerUp);
+        const nx = container.position.x;
+        const ny = container.position.y;
+        commitNodeUpdate(node.id, { x: nx, y: ny });
+        suppressClick = true;
+        if (clickTimeout) { clearTimeout(clickTimeout); clickTimeout = null; }
+        clickCount = 0;
+      };
+      moveHandle.on('pointerdown', (e: PIXI.FederatedPointerEvent) => {
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        e.preventDefault();
+        suppressClick = true;
+        if (clickTimeout) { clearTimeout(clickTimeout); clickTimeout = null; }
+        clickCount = 0;
+        dragging = true;
+        moveHandle.cursor = 'grabbing';
+        startGlobal = { x: e.global.x, y: e.global.y };
+        startPos = { x: container.position.x, y: container.position.y };
+        app.stage.on('pointermove', onMovePointerMove);
+        app.stage.on('pointerup', onMovePointerUp);
+        app.stage.on('pointerupoutside', onMovePointerUp);
+      });
+      container.addChild(moveHandle);
+
+      // Resize handle (bottom-right)
+      const resizeHandle = new PIXI.Graphics();
+      (resizeHandle as any).__isHandle = true;
+      resizeHandle.eventMode = 'static';
+      resizeHandle.cursor = 'nwse-resize';
+      const drawResizeHandle = () => {
+        resizeHandle.clear();
+        resizeHandle.fill({ color: 0x424242, alpha: 1 });
+        resizeHandle.rect(currentW - 12, currentH - 12, 10, 10);
+        resizeHandle.stroke({ width: 1, color: 0xffffff, alpha: 0.9 });
+      };
+      drawResizeHandle();
+
+      let resizing = false;
+      let startGlobalR = { x: 0, y: 0 };
+      let startSize = { w: node.width, h: node.height };
+      let lastDrawn = { w: node.width, h: node.height };
+
+      const redrawCard = (nw: number, nh: number) => {
+        lastDrawn = { w: nw, h: nh };
+        currentW = nw;
+        currentH = nh;
+        graphics.clear();
+        if (node.type === 'region') {
+          graphics.roundRect(0, 0, nw, nh, 15);
+        } else if (node.type === 'plant') {
+          graphics.roundRect(0, 0, nw, nh, 10);
+        } else if (node.type === 'area') {
+          graphics.roundRect(0, 0, nw, nh, 8);
+        } else {
+          graphics.rect(0, 0, nw, nh);
+        }
+        graphics.fill({ color: node.color, alpha: 0.7 });
+        graphics.stroke({ width: 2, color: 0x333333, alpha: 1 });
+        // update text constraints/position
+        text.style.wordWrapWidth = nw - 10;
+        text.x = nw / 2;
+        if (node.type === 'region') {
+          text.y = 25;
+        } else if (node.type === 'plant') {
+          text.y = 20;
+        } else if (node.type === 'area') {
+          text.y = 20;
+        } else if (node.type === 'location') {
+          text.y = 12;
+        } else {
+          text.y = nh / 2;
+        }
+        drawMoveHandle();
+        drawResizeHandle();
+      };
+
+      const onResizePointerMove = (e: PIXI.FederatedPointerEvent) => {
+        if (!resizing) return;
+        const g = e.global;
+        const dx = (g.x - startGlobalR.x) / (currentScale || 1);
+        const dy = (g.y - startGlobalR.y) / (currentScale || 1);
+        const rawW = startSize.w + dx;
+        const rawH = startSize.h + dy;
+        const snappedW = Math.max(MIN_CARD_WIDTH, Math.round(rawW / GRID_SIZE) * GRID_SIZE);
+        const snappedH = Math.max(MIN_CARD_HEIGHT, Math.round(rawH / GRID_SIZE) * GRID_SIZE);
+        redrawCard(snappedW, snappedH);
+      };
+      const onResizePointerUp = () => {
+        if (!resizing) return;
+        resizing = false;
+        resizeHandle.cursor = 'nwse-resize';
+        app.stage.off('pointermove', onResizePointerMove);
+        app.stage.off('pointerup', onResizePointerUp);
+        app.stage.off('pointerupoutside', onResizePointerUp);
+        commitNodeUpdate(node.id, { width: lastDrawn.w, height: lastDrawn.h });
+        suppressClick = true;
+        if (clickTimeout) { clearTimeout(clickTimeout); clickTimeout = null; }
+        clickCount = 0;
+      };
+      resizeHandle.on('pointerdown', (e: PIXI.FederatedPointerEvent) => {
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        e.preventDefault();
+        suppressClick = true;
+        if (clickTimeout) { clearTimeout(clickTimeout); clickTimeout = null; }
+        clickCount = 0;
+        resizing = true;
+        startGlobalR = { x: e.global.x, y: e.global.y };
+        startSize = { w: node.width, h: node.height };
+        app.stage.on('pointermove', onResizePointerMove);
+        app.stage.on('pointerup', onResizePointerUp);
+        app.stage.on('pointerupoutside', onResizePointerUp);
+      });
+      container.addChild(resizeHandle);
+    }
+
     return container;
   };
 
@@ -490,8 +678,11 @@ export const CanvasContainer: React.FC = () => {
     mainContainer.position.set(position.x, position.y);
 
     if (nodes.length > 0) {
+      const commitNodeUpdate = (id: string, patch: Partial<VisualizationNode>) => {
+        setNodes(prev => updateNodeTree(prev, id, patch));
+      };
       nodes.forEach((node) => {
-        const nodeContainer = createNodeGraphics(node, handleNodeClick, handleNodeDoubleClick, false);
+        const nodeContainer = createNodeGraphics(node, handleNodeClick, handleNodeDoubleClick, false, app, scale, commitNodeUpdate);
         mainContainer.addChild(nodeContainer);
       });
     } else {
