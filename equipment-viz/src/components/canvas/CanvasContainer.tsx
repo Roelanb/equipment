@@ -16,6 +16,7 @@ export const CanvasContainer: React.FC = () => {
   const [zoomedRegion, setZoomedRegion] = useState<VisualizationNode | null>(null);
   const [zoomedPlant, setZoomedPlant] = useState<VisualizationNode | null>(null);
   const [viewMode, setViewMode] = useState<'overview' | 'region' | 'plant'>('overview');
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -119,7 +120,7 @@ export const CanvasContainer: React.FC = () => {
     return nodes;
   };
 
-  const handleWheel = (e: WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
     setScale(prevScale => Math.max(0.1, Math.min(3, prevScale * scaleFactor)));
@@ -214,7 +215,8 @@ export const CanvasContainer: React.FC = () => {
     const plantNodes: VisualizationNode[] = [];
     const region = regionNode.data;
     
-    if (!region.plants) return plantNodes;
+    // Narrow union type: only Regions have 'plants'
+    if (!('plants' in region)) return plantNodes;
 
     const cols = Math.ceil(Math.sqrt(region.plants.length));
     const rows = Math.ceil(region.plants.length / cols);
@@ -266,7 +268,8 @@ export const CanvasContainer: React.FC = () => {
     const areaNodes: VisualizationNode[] = [];
     const plant = plantNode.data;
     
-    if (!plant.areas || plant.areas.length === 0) return areaNodes;
+    // Narrow union type: only Plants have 'areas'
+    if (!('areas' in plant) || !plant.areas || plant.areas.length === 0) return areaNodes;
 
     const cols = Math.ceil(Math.sqrt(plant.areas.length));
     const rows = Math.ceil(plant.areas.length / cols);
@@ -333,11 +336,11 @@ export const CanvasContainer: React.FC = () => {
     graphics.fill({ color: node.color, alpha: 0.7 });
     graphics.stroke({ width: 2, color: 0x333333, alpha: 1 });
     
-    graphics.interactive = true;
+    graphics.eventMode = 'static';
     graphics.cursor = 'pointer';
     
     // Handle single and double clicks
-    let clickTimeout: NodeJS.Timeout | null = null;
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
     let clickCount = 0;
     
     graphics.on('pointerdown', () => {
@@ -362,12 +365,10 @@ export const CanvasContainer: React.FC = () => {
     // Add hover effect
     graphics.on('pointerover', () => {
       graphics.alpha = 0.9;
-      graphics.tint = 0xffffff;
     });
     
     graphics.on('pointerout', () => {
       graphics.alpha = 1;
-      graphics.tint = 0xffffff;
     });
     
     // Add text using PIXI v8 API
@@ -415,37 +416,25 @@ export const CanvasContainer: React.FC = () => {
   };
 
   useEffect(() => {
+    // Initialize PIXI app once enterprise and dimensions are ready
+    if (!enterprise) return;
     if (!containerRef.current) return;
+    if (dimensions.width <= 0 || dimensions.height <= 0) return;
 
-    let app: PIXI.Application | null = null;
     let isDestroyed = false;
 
-    // Create new PIXI application using the new v8 API
     const initApp = async () => {
-      console.log('PIXI: Starting app initialization', { width: dimensions.width, height: dimensions.height, nodesCount: nodes.length });
-      
-      // Clean up any existing app before creating new one
       if (appRef.current) {
-        try {
-          // Remove canvas from DOM first
-          if (appRef.current.canvas && appRef.current.canvas.parentNode) {
-            appRef.current.canvas.parentNode.removeChild(appRef.current.canvas);
-          }
-          // Destroy the app
-          appRef.current.destroy(false);
-          console.log('PIXI: Previous app destroyed');
-        } catch (e) {
-          console.warn('Error destroying previous PIXI app:', e);
+        // Ensure canvas is attached (in case of hot-reloads)
+        if (containerRef.current && appRef.current.canvas && !containerRef.current.contains(appRef.current.canvas)) {
+          containerRef.current.appendChild(appRef.current.canvas);
         }
-        appRef.current = null;
+        setAppReady(true);
+        return;
       }
 
-      if (isDestroyed) return;
-
       try {
-        app = new PIXI.Application();
-        console.log('PIXI: Application instance created');
-        
+        const app = new PIXI.Application();
         await app.init({
           width: dimensions.width,
           height: dimensions.height,
@@ -454,78 +443,75 @@ export const CanvasContainer: React.FC = () => {
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
         });
-        console.log('PIXI: Application initialized successfully');
-
-        if (isDestroyed || !app) return;
-
-        // Store the app reference
+        if (isDestroyed) {
+          app.destroy(false);
+          return;
+        }
         appRef.current = app;
-
-        // Add canvas to container
         if (containerRef.current && app.canvas) {
           containerRef.current.appendChild(app.canvas);
-          console.log('PIXI: Canvas added to DOM');
-        } else {
-          console.warn('PIXI: Cannot add canvas to DOM', { containerRef: !!containerRef.current, canvas: !!app.canvas });
         }
+        setAppReady(true);
       } catch (error) {
         console.error('PIXI: Error during initialization:', error);
-        return;
       }
-
-      // Create main container for scaling and positioning
-      const mainContainer = new PIXI.Container();
-      mainContainer.scale.set(scale, scale);
-      mainContainer.position.set(position.x, position.y);
-
-      // Add nodes to the container
-      console.log('PIXI: Rendering', nodes.length, 'nodes');
-      if (nodes.length > 0) {
-        nodes.forEach((node) => {
-          const nodeContainer = createNodeGraphics(node, handleNodeClick, handleNodeDoubleClick, false);
-          mainContainer.addChild(nodeContainer);
-        });
-      } else {
-        // Show empty state message
-        const emptyText = new PIXI.Text({
-          text: 'No equipment data available.\nAdd regions to get started.',
-          style: {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 18,
-            fill: 0x666666,
-            align: 'center',
-          }
-        });
-        emptyText.anchor.set(0.5);
-        emptyText.x = dimensions.width / 2;
-        emptyText.y = dimensions.height / 2;
-        mainContainer.addChild(emptyText);
-      }
-
-      app.stage.addChild(mainContainer);
-      console.log('PIXI: Render complete!');
     };
 
     initApp();
 
-    // Cleanup on unmount
     return () => {
       isDestroyed = true;
       if (appRef.current) {
         try {
-          // Remove canvas from DOM first
           if (appRef.current.canvas && appRef.current.canvas.parentNode) {
             appRef.current.canvas.parentNode.removeChild(appRef.current.canvas);
           }
-          // Destroy the app with minimal options to avoid errors
           appRef.current.destroy(false);
         } catch (e) {
           console.warn('Error during cleanup:', e);
         }
         appRef.current = null;
       }
+      setAppReady(false);
     };
-  }, [nodes, dimensions, scale, position]);
+  }, [enterprise, dimensions]);
+
+  useEffect(() => {
+    // Render/update stage when nodes or transforms change
+    const app = appRef.current;
+    if (!app || !appReady) return;
+
+    // Clear stage
+    app.stage.removeChildren();
+
+    // Create main container for scaling and positioning
+    const mainContainer = new PIXI.Container();
+    mainContainer.scale.set(scale, scale);
+    mainContainer.position.set(position.x, position.y);
+
+    if (nodes.length > 0) {
+      nodes.forEach((node) => {
+        const nodeContainer = createNodeGraphics(node, handleNodeClick, handleNodeDoubleClick, false);
+        mainContainer.addChild(nodeContainer);
+      });
+    } else {
+      const emptyText = new PIXI.Text({
+        text: 'No equipment data available.\nAdd regions to get started.',
+        style: {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: 18,
+          fill: 0x666666,
+          align: 'center',
+        }
+      });
+      emptyText.anchor.set(0.5);
+      emptyText.x = dimensions.width / 2;
+      emptyText.y = dimensions.height / 2;
+      mainContainer.addChild(emptyText);
+    }
+
+    app.stage.addChild(mainContainer);
+  }, [appReady, nodes, scale, position, dimensions]);
 
   return (
     <Box
@@ -554,6 +540,21 @@ export const CanvasContainer: React.FC = () => {
           <ArrowBackIcon />
         </IconButton>
       )}
+      {!enterprise && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            pointerEvents: 'none',
+          }}
+        >
+          Loading...
+        </Box>
+      )}
       <Box
         ref={containerRef}
         sx={{ 
@@ -562,7 +563,7 @@ export const CanvasContainer: React.FC = () => {
           position: 'relative',
           overflow: 'hidden'
         }}
-        onWheel={handleWheel as any}
+        onWheel={handleWheel}
       />
     </Box>
   );

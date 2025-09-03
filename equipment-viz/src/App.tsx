@@ -58,7 +58,7 @@ const AppContent: React.FC = () => {
       setEnterprise(sampleEnterprise);
       console.log('Loaded sample enterprise data');
     }
-  }, [setEnterprise]);
+  }, []);
 
   return <Layout />;
 };

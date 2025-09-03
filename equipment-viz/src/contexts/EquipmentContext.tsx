@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { Enterprise, Region, Plant, Area, Location, Equipment } from '../types/equipment';
 import { DataService } from '../services/dataService';
@@ -42,17 +42,21 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
   const [selectedItem, setSelectedItemState] = useState<any | null>(null);
   const [selectedType, setSelectedType] = useState<'region' | 'plant' | 'area' | 'location' | 'equipment' | null>(null);
 
-  // Auto-save enterprise data whenever it changes
+  // Auto-save enterprise data with debouncing to prevent infinite loops
   useEffect(() => {
-    if (enterprise) {
-      console.log('Enterprise data updated:', enterprise);
+    if (!enterprise) return;
+    
+    console.log('Enterprise data updated:', enterprise);
+    const timeoutId = setTimeout(() => {
       DataService.saveToLocalStorage(enterprise);
-    }
+    }, 500); // Debounce for 500ms
+    
+    return () => clearTimeout(timeoutId);
   }, [enterprise]);
 
-  const setEnterprise = (enterprise: Enterprise) => {
+  const setEnterprise = useCallback((enterprise: Enterprise) => {
     setEnterpriseState(enterprise);
-  };
+  }, []);
 
   const setSelectedItem = (item: any, type: 'region' | 'plant' | 'area' | 'location' | 'equipment') => {
     setSelectedItemState(item);

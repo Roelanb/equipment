@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -10,16 +10,16 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import { useEquipment } from '../../contexts/EquipmentContext';
 import { Box, Typography } from '@mui/material';
 
-export const TreeView: React.FC = () => {
+export const TreeView: React.FC = React.memo(() => {
   const { enterprise, setSelectedItem } = useEquipment();
   const [expanded, setExpanded] = useState<string[]>(['root']);
   const [selected, setSelected] = useState<string>('');
 
-  const handleToggle = (_event: React.SyntheticEvent | null, itemIds: string[]) => {
+  const handleToggle = useCallback((_event: React.SyntheticEvent | null, itemIds: string[]) => {
     setExpanded(itemIds);
-  };
+  }, []);
 
-  const handleSelect = (_event: React.SyntheticEvent | null, itemId: string | null) => {
+  const handleSelect = useCallback((_event: React.SyntheticEvent | null, itemId: string | null) => {
     setSelected(itemId || '');
     
     const parts = (itemId || '').split('-');
@@ -78,7 +78,7 @@ export const TreeView: React.FC = () => {
         });
       });
     }
-  };
+  }, [enterprise, setSelectedItem]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -187,4 +187,6 @@ export const TreeView: React.FC = () => {
       </TreeItem>
     </SimpleTreeView>
   );
-};
+});
+
+TreeView.displayName = 'TreeView';
