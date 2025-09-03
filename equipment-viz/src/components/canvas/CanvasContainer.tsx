@@ -40,15 +40,19 @@ export const CanvasContainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    console.log('Canvas: enterprise changed', { enterprise: !!enterprise, viewMode });
     if (enterprise) {
       if (viewMode === 'overview') {
         const visualizationNodes = generateVisualizationNodes(enterprise);
+        console.log('Canvas: Generated visualization nodes', visualizationNodes);
         setNodes(visualizationNodes);
       } else if (viewMode === 'region' && zoomedRegion) {
         const plantNodes = generatePlantNodes(zoomedRegion);
+        console.log('Canvas: Generated plant nodes', plantNodes);
         setNodes(plantNodes);
       } else if (viewMode === 'plant' && zoomedPlant) {
         const areaNodes = generateAreaNodes(zoomedPlant);
+        console.log('Canvas: Generated area nodes', areaNodes);
         setNodes(areaNodes);
       }
     }
@@ -314,14 +318,7 @@ export const CanvasContainer: React.FC = () => {
     const container = new PIXI.Container();
     const graphics = new PIXI.Graphics();
     
-    // Set stroke style
-    graphics.setStrokeStyle({
-      width: 2,
-      color: 0x333333,
-      alpha: 1
-    });
-    
-    // Draw and fill the shape
+    // Use PIXI v8 Graphics API - shape first, then styling
     if (node.type === 'region') {
       graphics.roundRect(0, 0, node.width, node.height, 15);
     } else if (node.type === 'plant') {
@@ -332,8 +329,9 @@ export const CanvasContainer: React.FC = () => {
       graphics.rect(0, 0, node.width, node.height);
     }
     
+    // Apply fill and stroke using v8 API
     graphics.fill({ color: node.color, alpha: 0.7 });
-    graphics.stroke();
+    graphics.stroke({ width: 2, color: 0x333333, alpha: 1 });
     
     graphics.interactive = true;
     graphics.cursor = 'pointer';
@@ -372,14 +370,14 @@ export const CanvasContainer: React.FC = () => {
       graphics.tint = 0xffffff;
     });
     
-    // Add text
+    // Add text using PIXI v8 API
     const fontSize = node.type === 'region' ? 18 : node.type === 'plant' ? 16 : node.type === 'area' ? 14 : 11;
     const text = new PIXI.Text({
       text: node.name,
       style: {
         fontFamily: 'Arial, sans-serif',
         fontSize: fontSize,
-        fill: node.type === 'region' || node.type === 'plant' ? '#ffffff' : '#333333',
+        fill: node.type === 'region' || node.type === 'plant' ? 0xffffff : 0x333333,
         align: 'center',
         wordWrap: true,
         wordWrapWidth: node.width - 10,
@@ -417,13 +415,15 @@ export const CanvasContainer: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!containerRef.current || !nodes.length) return;
+    if (!containerRef.current) return;
 
     let app: PIXI.Application | null = null;
     let isDestroyed = false;
 
     // Create new PIXI application using the new v8 API
     const initApp = async () => {
+      console.log('PIXI: Starting app initialization', { width: dimensions.width, height: dimensions.height, nodesCount: nodes.length });
+      
       // Clean up any existing app before creating new one
       if (appRef.current) {
         try {
@@ -433,6 +433,7 @@ export const CanvasContainer: React.FC = () => {
           }
           // Destroy the app
           appRef.current.destroy(false);
+          console.log('PIXI: Previous app destroyed');
         } catch (e) {
           console.warn('Error destroying previous PIXI app:', e);
         }
@@ -441,25 +442,35 @@ export const CanvasContainer: React.FC = () => {
 
       if (isDestroyed) return;
 
-      app = new PIXI.Application();
-      
-      await app.init({
-        width: dimensions.width,
-        height: dimensions.height,
-        backgroundColor: 0xf5f5f5,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      });
+      try {
+        app = new PIXI.Application();
+        console.log('PIXI: Application instance created');
+        
+        await app.init({
+          width: dimensions.width,
+          height: dimensions.height,
+          backgroundColor: 0xf5f5f5,
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+        console.log('PIXI: Application initialized successfully');
 
-      if (isDestroyed || !app) return;
+        if (isDestroyed || !app) return;
 
-      // Store the app reference
-      appRef.current = app;
+        // Store the app reference
+        appRef.current = app;
 
-      // Add canvas to container
-      if (containerRef.current && app.canvas) {
-        containerRef.current.appendChild(app.canvas);
+        // Add canvas to container
+        if (containerRef.current && app.canvas) {
+          containerRef.current.appendChild(app.canvas);
+          console.log('PIXI: Canvas added to DOM');
+        } else {
+          console.warn('PIXI: Cannot add canvas to DOM', { containerRef: !!containerRef.current, canvas: !!app.canvas });
+        }
+      } catch (error) {
+        console.error('PIXI: Error during initialization:', error);
+        return;
       }
 
       // Create main container for scaling and positioning
@@ -468,12 +479,31 @@ export const CanvasContainer: React.FC = () => {
       mainContainer.position.set(position.x, position.y);
 
       // Add nodes to the container
-      nodes.forEach(node => {
-        const nodeContainer = createNodeGraphics(node, handleNodeClick, handleNodeDoubleClick, false);
-        mainContainer.addChild(nodeContainer);
-      });
+      console.log('PIXI: Rendering', nodes.length, 'nodes');
+      if (nodes.length > 0) {
+        nodes.forEach((node) => {
+          const nodeContainer = createNodeGraphics(node, handleNodeClick, handleNodeDoubleClick, false);
+          mainContainer.addChild(nodeContainer);
+        });
+      } else {
+        // Show empty state message
+        const emptyText = new PIXI.Text({
+          text: 'No equipment data available.\nAdd regions to get started.',
+          style: {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 18,
+            fill: 0x666666,
+            align: 'center',
+          }
+        });
+        emptyText.anchor.set(0.5);
+        emptyText.x = dimensions.width / 2;
+        emptyText.y = dimensions.height / 2;
+        mainContainer.addChild(emptyText);
+      }
 
       app.stage.addChild(mainContainer);
+      console.log('PIXI: Render complete!');
     };
 
     initApp();

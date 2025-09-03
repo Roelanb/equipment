@@ -4,6 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { EquipmentProvider, useEquipment } from './contexts/EquipmentContext';
 import { Layout } from './components/layout/Layout';
 import { sampleEnterprise } from './data/sampleData';
+import { DataService } from './services/dataService';
 
 const theme = createTheme({
   palette: {
@@ -47,7 +48,16 @@ const AppContent: React.FC = () => {
   const { setEnterprise } = useEquipment();
 
   useEffect(() => {
-    setEnterprise(sampleEnterprise);
+    // Try to load saved data first
+    const savedData = DataService.loadFromLocalStorage();
+    if (savedData) {
+      setEnterprise(savedData);
+      console.log('Loaded saved enterprise data');
+    } else {
+      // Fall back to sample data if no saved data exists
+      setEnterprise(sampleEnterprise);
+      console.log('Loaded sample enterprise data');
+    }
   }, [setEnterprise]);
 
   return <Layout />;

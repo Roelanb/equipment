@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PIXI v8 Test</title>
+    <script src="https://pixijs.download/release/pixi.js"></script>
+</head>
+<body>
+    <div id="pixi-container"></div>
+    <script>
+        (async () => {
+            console.log('Testing PIXI v8...');
+            
+            try {
+                const app = new PIXI.Application();
+                await app.init({
+                    width: 800,
+                    height: 600,
+                    backgroundColor: 0xf0f0f0,
+                });
+                
+                document.getElementById('pixi-container').appendChild(app.canvas);
+                console.log('PIXI app created successfully');
+                
+                // Test simple graphics
+                const graphics = new PIXI.Graphics();
+                graphics.rect(50, 50, 200, 150);
+                graphics.fill({ color: 0xff0000, alpha: 0.7 });
+                graphics.stroke({ width: 2, color: 0x333333 });
+                
+                app.stage.addChild(graphics);
+                console.log('Graphics added successfully');
+                
+                // Test text
+                const text = new PIXI.Text({
+                    text: 'PIXI v8 Test',
+                    style: {
+                        fontSize: 24,
+                        fill: 0x333333
+                    }
+                });
+                text.x = 50;
+                text.y = 250;
+                app.stage.addChild(text);
+                console.log('Text added successfully');
+                
+            } catch (error) {
+                console.error('PIXI test failed:', error);
+            }
+        })();
+    </script>
+</body>
+</html>

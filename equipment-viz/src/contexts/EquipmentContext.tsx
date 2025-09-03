@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Enterprise, Region, Plant, Area, Location, Equipment } from '../types/equipment';
+import { DataService } from '../services/dataService';
 
 interface EquipmentContextType {
   enterprise: Enterprise | null;
@@ -37,9 +38,21 @@ interface EquipmentProviderProps {
 }
 
 export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }) => {
-  const [enterprise, setEnterprise] = useState<Enterprise | null>(null);
+  const [enterprise, setEnterpriseState] = useState<Enterprise | null>(null);
   const [selectedItem, setSelectedItemState] = useState<any | null>(null);
   const [selectedType, setSelectedType] = useState<'region' | 'plant' | 'area' | 'location' | 'equipment' | null>(null);
+
+  // Auto-save enterprise data whenever it changes
+  useEffect(() => {
+    if (enterprise) {
+      console.log('Enterprise data updated:', enterprise);
+      DataService.saveToLocalStorage(enterprise);
+    }
+  }, [enterprise]);
+
+  const setEnterprise = (enterprise: Enterprise) => {
+    setEnterpriseState(enterprise);
+  };
 
   const setSelectedItem = (item: any, type: 'region' | 'plant' | 'area' | 'location' | 'equipment') => {
     setSelectedItemState(item);
@@ -58,7 +71,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
       ...enterprise,
       regions: [...enterprise.regions, region]
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
   };
 
   const addPlant = (regionId: string, plant: Plant) => {
@@ -71,7 +84,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
           : region
       )
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
   };
 
   const addArea = (plantId: string, area: Area) => {
@@ -87,7 +100,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         )
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
   };
 
   const addLocation = (areaId: string, location: Location) => {
@@ -106,7 +119,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         }))
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
   };
 
   const addEquipment = (locationId: string, equipment: Equipment) => {
@@ -128,7 +141,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         }))
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
   };
 
   const removeRegion = (regionId: string) => {
@@ -137,7 +150,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
       ...enterprise,
       regions: enterprise.regions.filter(region => region.id !== regionId)
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
     if (selectedItem?.id === regionId) {
       clearSelection();
     }
@@ -152,7 +165,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         plants: region.plants.filter(plant => plant.id !== plantId)
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
     if (selectedItem?.id === plantId) {
       clearSelection();
     }
@@ -170,7 +183,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         }))
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
     if (selectedItem?.id === areaId) {
       clearSelection();
     }
@@ -191,7 +204,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         }))
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
     if (selectedItem?.id === locationId) {
       clearSelection();
     }
@@ -215,7 +228,7 @@ export const EquipmentProvider: React.FC<EquipmentProviderProps> = ({ children }
         }))
       }))
     };
-    setEnterprise(updatedEnterprise);
+    setEnterpriseState(updatedEnterprise);
     if (selectedItem?.id === equipmentId) {
       clearSelection();
     }

@@ -72,7 +72,7 @@ export const sampleEnterprise: Enterprise = {
                 {
                   id: 'loc-us-1-1-2',
                   name: 'Station 2',
-                  areaId: 'area-us-1-1',
+                  areaId: '6225c2a6-6b1d-4c5d-9d1c-4b9d1c4b9d1c',
                   equipment: [
                     createEquipment('eq-003', 'Welding Robot W1', 'Robot', [
                       createAttribute('Model', 'string', 'WLD-500'),
@@ -86,7 +86,7 @@ export const sampleEnterprise: Enterprise = {
             {
               id: 'area-us-1-2',
               name: 'Quality Control',
-              plantId: 'plant-us-1',
+              plantId: '9fac8a3e-36ba-4631-94c6-c192a83f47a6',
               locations: [
                 {
                   id: 'loc-us-1-2-1',
@@ -107,7 +107,7 @@ export const sampleEnterprise: Enterprise = {
         {
           id: 'plant-mx-1',
           name: 'Mexico City Factory',
-          regionId: 'reg-amer',
+          regionId: 'bc7cb265-7b9f-4fb2-86d1-31f3599974a2',
           coordinates: { x: 150, y: 200 },
           areas: [
             {
